@@ -9,9 +9,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/seance/restmonk.git"
-  }
+  },
   "author": "seance",
   "license": "ISC",
+  "engines": {
+    "node": "0.10.x"
+  },
   "dependencies": {
     "restify": "^2.7.0",
     "monk": "^0.8.1"

@@ -40,13 +40,14 @@ server.get('/things', findByQuery('things', {
 }))
 
 server.get('/tweet', function(req, res, next) {
-  twitter.getLatestTweet('typesafe', {
+  twitter.getLatestTweet('nodejs', {
     onSuccess: function(tweet) {
       res.send(tweet)
       next()
     }, 
     onError: function(err) {
-      res.send('Error getting tweet: ' + err)
+      console.log('Error getting tweet: ' + err)
+      res.send(502)
       next()
     }
   })

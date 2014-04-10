@@ -1,7 +1,10 @@
 var restify = require('restify'),
     qs = require('querystring'),
-    client = restify.createJsonClient({
-      url: 'https://api.twitter.com',
+    authClient = restify.createStringClient({
+      url: 'https://api.twitter.com'
+    }),
+    contentClient = restify.createJsonClient({
+      url: 'https://api.twitter.com'
     })
 
 var apiKey = process.env.TWITTER_API_KEY,
@@ -18,8 +21,7 @@ function bearerAuthHeaders() {
 }
 
 function fetchBearerToken(opts) {
-  console.log('fetchBearerToken')
-  client.post({
+  authClient.post({
       path: '/oauth2/token',
       headers: basicAuthHeaders()
     },
@@ -28,12 +30,10 @@ function fetchBearerToken(opts) {
     },
     function(err, req, res, obj) {
       if (!err) {
-        console.log('fetchBearerToken succeeded: ' + obj.access_token
-        bearerToken = obj.access_token
+        bearerToken = JSON.parse(obj).access_token
         // schedule removing token in 15 mins?
         opts.onSuccess()
       } else {
-        console.log('fetchBearerToken failed: ' + err, req, res)
         opts.onError(err)
       }
     })
@@ -41,17 +41,14 @@ function fetchBearerToken(opts) {
 
 function get(path, opts) {
   function getWithToken() {
-    console.log('getWithToken: ' + bearerToken)
-    client.get({
+    contentClient.get({
       path: path,
       headers: bearerAuthHeaders()
     }, function(err, req, res, obj) {
       if (!err) {
-        console.log('getWithToken succeeded')
         opts.onSuccess(req, res, obj)
       } else {
         // remove bearerToken if necessary?
-        console.log('getWithToken failed: ' + err, req, res)
         opts.onError(err)
       }
     })
@@ -67,13 +64,17 @@ function get(path, opts) {
 }
 
 exports.getLatestTweet = function(screenName, opts) {
-  console.log('getLatestTweet: ' + screenName)
-  get('/statuses/user_timeline?' + qs.stringify({
+  get('/1.1/statuses/user_timeline.json?' + qs.stringify({
     screen_name: screenName,
     count: 1
   }), {
     onSuccess: function(req, res, obj) {
-      opts.onSuccess(obj[0].text)
+      opts.onSuccess(
+        obj[0].retweeted_status
+          ? 'RT @' + obj[0].retweeted_status.user.screen_name + ': ' +
+                     obj[0].retweeted_status.text
+          : obj[0].text
+      )
     },
     onError: opts.onError
   })

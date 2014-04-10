@@ -1,5 +1,6 @@
 var restify = require('restify'),
-    monk = require('monk')
+    monk = require('monk'),
+    twitter = require('./twitter.js')
 
 var server = restify.createServer(),
     db = monk(process.env.MONGODB_URI)
@@ -37,6 +38,19 @@ server.get('/things', findByQuery('things', {
   age: IntP,
   happy: BooleanP
 }))
+
+server.get('/tweet', function(req, res, next) {
+  twitter.getLatestTweet('typesafe', {
+    onSuccess: function(tweet) {
+      res.send(tweet)
+      next()
+    }, 
+    onError: function(err) {
+      res.send('Error getting tweet: ' + err)
+      next()
+    }
+  })
+})
 
 server.listen(process.env.PORT || 8080, function() {
   console.log('%s listening at %s', server.name, server.url)
